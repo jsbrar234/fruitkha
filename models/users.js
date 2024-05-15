@@ -38,6 +38,9 @@ const userSchema = new Schema({
     },
     accessToken : {
         type: String,
+    },
+    otp : {
+        type : Number
     }
 },
 { timestamps: true } 

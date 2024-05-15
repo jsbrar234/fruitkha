@@ -4,6 +4,7 @@ const auth = require('../middleware/auth');
 const Users = require('../models/users');
 const router = express.Router();
 
+const nodemailer = require('nodemailer')
 const Stripe = require('stripe');
 const Address = require('../models/address');
 const { default: mongoose } = require('mongoose');
@@ -65,23 +66,23 @@ router.get('/getUserDetails', auth, async (req, res, next) => {
   const userId = req.userId
 
   const data = await Users.findOne({
-    _id : userId
+    _id: userId
   }, {
-    firstName : 1,
-    lastName : 1,
-    phone : 1,
-    email : 1
+    firstName: 1,
+    lastName: 1,
+    phone: 1,
+    email: 1
   })
 
-  if(data){
+  if (data) {
     res.status(200).send({
-      message : "Data Found",
+      message: "Data Found",
       data
     })
   }
-  else{
+  else {
     res.status(400).send({
-      message : "No Data Found"
+      message: "No Data Found"
     })
   }
 
@@ -173,15 +174,15 @@ router.post('/getAddress', auth, async (req, res, next) => {
 
   try {
     const userId = req.userId;
-  
+
     const data = await Address.aggregate([
       {
-        $match: { userId : new mongoose.Types.ObjectId(userId) }
+        $match: { userId: new mongoose.Types.ObjectId(userId) }
       },
       {
         $lookup: {
           from: "users",
-          let: { uid : "$userId" },
+          let: { uid: "$userId" },
           pipeline: [
             {
               $match: {
@@ -193,22 +194,153 @@ router.post('/getAddress', auth, async (req, res, next) => {
         }
       },
     ])
-  
-    if(data.length > 0){
+
+    if (data.length > 0) {
       res.status(200).send({
-        message : "Data Found",
-        data : data
+        message: "Data Found",
+        data: data
       })
     }
-    else{
+    else {
       res.status(400).send({
-        message : "No Data Found"
+        message: "No Data Found"
       })
     }
   } catch (error) {
     console.log("ERROR", error)
     res.status(200).send({
-      message : "Internal Server Error"
+      message: "Internal Server Error"
+    })
+  }
+
+});
+
+
+// FORGOT PASSWORD AND SEND OTP
+
+router.put('/sendOtp', async (req, res, next) => {
+
+  const { email } = req.body;
+
+  let transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'jsbrar07427@gmail.com',
+      pass: 'gzabllmnmytyhnmy'
+    }
+  });
+
+  const verify = await Users.findOne({
+    email
+  })
+  if (verify) {
+    const otp = Math.floor(100000 + Math.random() * 900000);
+
+    const data = await Users.findOneAndUpdate({ email: email }, { $set: { otp: otp } })
+
+    if (data) {
+      let mailOptions = {
+        from: email,
+        to: email,
+        subject: "Fruitkha Forgot Password OTP",
+        text: 
+        `Dear User,
+        Your One-Time Password (OTP) for verification is: ${otp.toString()}.
+        
+        Please use this OTP to complete your action. Do not share this OTP with anyone for security reasons.
+        
+        Thank you,
+        Fruitkhha Pvt. Ltd.`
+      };
+
+
+
+      transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+          console.log(error);
+          res.status(400).send({
+            message: "FAILED TO SEND EMAIL"
+          })
+        } else {
+          console.log('Email sent: ' + info.response);
+          res.status(200).send({
+            message: "OTP SENT SUCCESSFULLY"
+          })
+        }
+      });
+    }
+    else {
+      return res.status(400).send({
+        message: "FAILED TO SEND OTP"
+      })
+    }
+  }
+  else {
+    return res.status(400).send({
+      message: "There is no account aasociated with this Email"
+    })
+  }
+
+
+});
+
+// VERIY OTP 
+router.post('/verifyOtp', async (req, res, next) => {
+
+  const {email, otp} =req.body;
+
+  const data = await Users.findOne({email})
+
+
+  try {
+    if(data){
+      if(otp==data.otp){
+        return res.status(200).send({
+          success : true,
+          message : "OTP VERIFIED"
+        })
+      }
+  
+      else{
+        return res.status(200).send({
+          success : false,
+          message : "INVALID OTP"
+        })
+      }
+    }
+  
+    else{
+      return res.status(400).send({
+        message : "Unable to Find Account"
+      })
+    }
+  } catch (error) {
+    console.log('error', error)
+  }
+
+});
+
+
+// FOR CHANGING PASSWORD
+
+
+router.put('/changePassword', async (req, res, next) => {
+
+  const {email, password} = req.body;
+
+  const data = await Users.findOneAndUpdate({ email: email }, { $set: { password: password } })
+
+  if(data){
+    return res.status(200).send({
+      success : true,
+      message : "Password Updated Successfully"
+    })
+  }
+
+  else{
+    return res.status(401).send({
+      success : true,
+      message : "Failed to change the Password"
     })
   }
 
