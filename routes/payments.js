@@ -7,7 +7,7 @@ const Users = require('../models/users');
 var router = express.Router();
 
 const Stripe = require('stripe');
-const stripe = Stripe('sk_test_51P7mtVP2juis5ZCN59phy87RnMxw5AOJObgGLvDBOgFZeXn2zfBGvuE77dpdq8dexhkG9hEtTpv7Iw5DvhjrU9um00XQsWyePd');
+const stripe = Stripe(process.env.STRIPE);
 
 
 // CREATE PAYMENT METHOD

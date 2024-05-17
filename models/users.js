@@ -41,12 +41,44 @@ const userSchema = new Schema({
     },
     otp : {
         type : Number
+    },
+    dateOfBirth: {
+        type: Date,
+        
+        // validate: {
+        //     validator: function(value) {
+        //         const today = new Date();
+        //         const age = today.getFullYear() - value.getFullYear();
+        //         return age >= 18;
+        //     },
+        //     message: 'You must be at least 18 years old.'
+        // }
+    },
+    gender: {
+        type: String,
+        enum: ['male', 'female'],
+        required : true,
+    },
+    pincode: {
+        type: String,
+        required : true,
+        trim: true
+    },
+    city: {
+        type: String,
+        required : true,
+        trim: true
+    },
+    state: {
+        type: String,
+        required : true,
+        trim: true
     }
 },
 { timestamps: true } 
 )
 
-// create a model or a collection
+
 
 const Users = new model('users', userSchema);
 module.exports = Users;

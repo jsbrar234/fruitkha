@@ -75,12 +75,8 @@ router.delete('/deleteProduct', auth, async (req, res, next) => {
 
 // GET PRODUCTS DETAILS
 
-router.get('/getProducts', async (req, res, next) => {
-
-
-    
+router.get('/getProducts', async (req, res, next) => { 
     const { query } = req.query
-
     console.log('query', query)
 
     try {
@@ -120,7 +116,37 @@ router.get('/getProducts', async (req, res, next) => {
 
 })
 
+// GET SIMILAR PRODUCTS SAMPLE
 
+
+router.get('/similarProducts', async (req, res, next) => {
+
+    try {
+        const data = await Products.aggregate([
+          { $sample: { size: 3 } }
+        ]);
+        
+
+        if(data){
+            res.status(200).send({
+                message : "data found",
+                data
+            })
+        }
+        else{
+            res.status(404).send({
+                message : "data not found",
+            })
+        }
+      } catch (error) {
+        console.error('Error fetching random products:', error);
+        res.status(500).send({
+            message : "Internal Server Error",
+        })
+      }
+
+
+});
 
 
 // ADD TO CART

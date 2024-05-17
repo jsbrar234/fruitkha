@@ -11,9 +11,10 @@ var usersRouter = require('./routes/users');
 var products = require('./routes/products');
 var imgUpload = require('./routes/imageUpload');
 var payments = require('./routes/payments');
-var admin = require('./routes/admin');
-const { checkAdmin } = require('./routes/checkAdmin');
-const Users = require('./models/users');
+var sendMail = require('./routes/sendMail')
+// var admin = require('./routes/admin');
+// const { checkAdmin } = require('./routes/checkAdmin');
+// const Users = require('./models/users');
 
 var app = express();
 
@@ -35,23 +36,24 @@ app.use('/users', usersRouter);
 app.use('/products', products);
 app.use('/imgUpload', imgUpload)
 app.use('/payments', payments)
-app.use('/admin', admin)
+app.use('/sendMail', sendMail)
+// app.use('/admin', admin)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
 });
 
-if(() => checkAdmin){
-  const data = Users.create({
-    firstName : "Admin",
-    lastName : "Account",
-    phone : "1234567890",
-    email : "admin@gmail.com",
-    password : "password",
-    role : "admin"
-  })
-}
+// if(() => checkAdmin){
+//   const data = Users.create({
+//     firstName : "Admin",
+//     lastName : "Account",
+//     phone : "1234567890",
+//     email : "admin@gmail.com",
+//     password : "password",
+//     role : "admin"
+//   })
+// }
 
 const corsOptions = {
   origin: "*"

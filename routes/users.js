@@ -8,12 +8,12 @@ const nodemailer = require('nodemailer')
 const Stripe = require('stripe');
 const Address = require('../models/address');
 const { default: mongoose } = require('mongoose');
-const stripe = Stripe('sk_test_51P7mtVP2juis5ZCN59phy87RnMxw5AOJObgGLvDBOgFZeXn2zfBGvuE77dpdq8dexhkG9hEtTpv7Iw5DvhjrU9um00XQsWyePd');
+const stripe = Stripe(process.env.STRIPE);
 
 // Route for user sign-up
 router.post('/signUp', async (req, res, next) => {
   try {
-    const { firstName, lastName, phone, email, password } = req.body;
+    const { firstName, lastName, phone, email, password, dateOfBirth, gender, pincode, city, state } = req.body;
 
     const customer = await stripe.customers.create({
       name: `${firstName} ${lastName} `,
@@ -32,7 +32,12 @@ router.post('/signUp', async (req, res, next) => {
       phone,
       email,
       password,
-      customerId: customer.id
+      customerId: customer.id, 
+      dateOfBirth, 
+      gender,
+      pincode,
+      city,
+       state
     });
 
     const savedUser = await newUser.save();
@@ -58,8 +63,45 @@ router.post('/signUp', async (req, res, next) => {
   }
 });
 
-// GET USER DETAILS
+// UPDATE USER DETAILS
 
+
+
+// UPDATE USER DETAIL
+router.put('/updateUser', auth, async (req, res, next) => {
+
+  const userId = req.userId
+
+  const { firstName, lastName, phone, email, pincode, city, state } = req.body;
+
+  try {
+      const updatedUser = await Users.findOneAndUpdate({ _id: userId }, { $set: { firstName, lastName, phone, email, pincode, city, state } })
+
+      if (updatedUser) {
+        return res.status(200).send({
+          message: "Profile Updated Successfully",
+          data: updatedUser
+        })
+      }
+      else {
+        return res.status(400).send({
+          message: "Failed to Update Profile",
+          data: updatedUser
+        })
+      }
+
+  } catch (error) {
+    console.log('error', error)
+    return res.status(500).send({
+      message: "Failed to Update User Data"
+    })
+  }
+
+
+
+});
+
+// GET USER DETAILS
 
 router.get('/getUserDetails', auth, async (req, res, next) => {
 
@@ -71,7 +113,12 @@ router.get('/getUserDetails', auth, async (req, res, next) => {
     firstName: 1,
     lastName: 1,
     phone: 1,
-    email: 1
+    email: 1,
+    gender : 1,
+    dateOfBirth : 1,
+    pincode : 1,
+    city : 1,
+    state : 1
   })
 
   if (data) {
@@ -214,6 +261,50 @@ router.post('/getAddress', auth, async (req, res, next) => {
   }
 
 });
+// FOR CHANGING PASSWORD IN LOGGED IN ACCOUNT
+
+router.put('/changePasswordLogin',auth, async (req, res, next) => {
+  const {oldPassword, password} = req.body;
+
+  const userId = req.userId
+
+  try {
+    const data = await Users.findOne({_id : userId})
+
+     
+
+    if(data.password === oldPassword){
+      if(data.password === password){
+        return res.status(400).send({
+          message : "You cannot use previously used password"
+        })
+      }
+      const updatedPassword = await Users.findOneAndUpdate({ _id : userId},{ $set: { password } })
+
+      if(updatedPassword){
+        res.status(200).send({
+          message : "Password Updated Successfully"
+        })
+      }
+
+      else{
+        res.status(401).send({
+          message : "Failed to Update Password"
+        })
+      }
+
+    }
+
+    else{
+      return res.status(400).send({
+        message : "Incorrect Old Password"
+      })
+    }
+  } catch (error) {
+    
+  }
+});
+
 
 
 // FORGOT PASSWORD AND SEND OTP
@@ -243,8 +334,8 @@ router.put('/sendOtp', async (req, res, next) => {
         from: email,
         to: email,
         subject: "Fruitkha Forgot Password OTP",
-        text: 
-        `Dear User,
+        text:
+          `Dear User,
         Your One-Time Password (OTP) for verification is: ${otp.toString()}.
         
         Please use this OTP to complete your action. Do not share this OTP with anyone for security reasons.
@@ -287,31 +378,31 @@ router.put('/sendOtp', async (req, res, next) => {
 // VERIY OTP 
 router.post('/verifyOtp', async (req, res, next) => {
 
-  const {email, otp} =req.body;
+  const { email, otp } = req.body;
 
-  const data = await Users.findOne({email})
+  const data = await Users.findOne({ email })
 
 
   try {
-    if(data){
-      if(otp==data.otp){
+    if (data) {
+      if (otp == data.otp) {
         return res.status(200).send({
-          success : true,
-          message : "OTP VERIFIED"
+          success: true,
+          message: "OTP VERIFIED"
         })
       }
-  
-      else{
-        return res.status(200).send({
-          success : false,
-          message : "INVALID OTP"
+
+      else {
+        return res.status(400).send({
+          success: false,
+          message: "INVALID OTP"
         })
       }
     }
-  
-    else{
+
+    else {
       return res.status(400).send({
-        message : "Unable to Find Account"
+        message: "Unable to Find Account"
       })
     }
   } catch (error) {
@@ -326,21 +417,21 @@ router.post('/verifyOtp', async (req, res, next) => {
 
 router.put('/changePassword', async (req, res, next) => {
 
-  const {email, password} = req.body;
+  const { email, password } = req.body;
 
   const data = await Users.findOneAndUpdate({ email: email }, { $set: { password: password } })
 
-  if(data){
+  if (data) {
     return res.status(200).send({
-      success : true,
-      message : "Password Updated Successfully"
+      success: true,
+      message: "Password Updated Successfully"
     })
   }
 
-  else{
+  else {
     return res.status(401).send({
-      success : true,
-      message : "Failed to change the Password"
+      success: true,
+      message: "Failed to change the Password"
     })
   }
 
