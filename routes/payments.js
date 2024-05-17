@@ -107,7 +107,9 @@ router.get("/getCustomerPaymentMethods", auth, async (req, res) => {
     } catch (error) {
         res.status(500).send({
             message: "Failed to Get Payment Methods"
+            
         })
+        console.log('error', error)
     }
 })
 
